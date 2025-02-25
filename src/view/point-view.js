@@ -1,5 +1,5 @@
 import AbstractView from '../framework/view/abstract-view.js';
-import { humanizeTaskDueDate, calculatesTravelTime } from '../util.js';
+import { humanizeTaskDueDate, calculatesTravelTime } from '../utils.js';
 import { TIME_FORMAT, DATE_FORMAT } from '../const.js';
 
 function createPointOffersTemplate(pointOffers, point) {
