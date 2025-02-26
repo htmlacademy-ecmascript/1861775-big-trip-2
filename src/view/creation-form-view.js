@@ -1,5 +1,5 @@
-import { createElement } from '../render.js';
-import { humanizeTaskDueDate, createFormOffersTemplate, createDestinationList, createEventTypeItem } from '../util.js';
+import AbstractView from '../framework/view/abstract-view.js';
+import { humanizeTaskDueDate, createFormOffersTemplate, createDestinationList, createEventTypeItem } from '../utils.js';
 import { DATE_TIME_FORMAT } from '../const.js';
 
 
@@ -97,25 +97,20 @@ function createCreationFormViewTemplate(point, offers, destinations) {
               </form>`;
 }
 
-export default class CreationFormView {
+export default class CreationFormView extends AbstractView {
+  #point = null;
+  #offers = null;
+  #destinations = null;
+
+
   constructor({ point, offers, destinations }) {
-    this.point = point;
-    this.offers = offers;
-    this.destinations = destinations;
+    super();
+    this.#point = point;
+    this.#offers = offers;
+    this.#destinations = destinations;
   }
 
-  getTemplate() {
-    return createCreationFormViewTemplate(this.point, this.offers, this.destinations);
-  }
-
-  getElement() {
-    if (!this.element) {
-      this.element = createElement(this.getTemplate());
-    }
-    return this.element;
-  }
-
-  removeElement() {
-    this.element = null;
+  get template() {
+    return createCreationFormViewTemplate(this.#point, this.#offers, this.#destinations);
   }
 }

@@ -1,5 +1,5 @@
-import { createElement } from '../render.js';
-import { humanizeTaskDueDate } from '../util.js';
+import AbstractView from '../framework/view/abstract-view.js';
+import { humanizeTaskDueDate, calculatesTravelTime } from '../utils.js';
 import { TIME_FORMAT, DATE_FORMAT } from '../const.js';
 
 function createPointOffersTemplate(pointOffers, point) {
@@ -28,6 +28,7 @@ function createPointViewTemplate(point, offers, destinations) {
   const date = humanizeTaskDueDate(dateTo, DATE_FORMAT);
   const startTime = humanizeTaskDueDate(dateFrom, TIME_FORMAT);
   const endTime = humanizeTaskDueDate(dateTo, TIME_FORMAT);
+  const travelTime = calculatesTravelTime(dateFrom, dateTo);
 
   //Проверяем в избранном ли задача
   const favoriteClassName = isFavorite ? 'event__favorite-btn--active' : '';
@@ -45,7 +46,7 @@ function createPointViewTemplate(point, offers, destinations) {
                     &mdash;
                     <time class="event__end-time" datetime="${dateTo}">${endTime}</time>
                   </p>
-                  <p class="event__duration">30M</p>
+                  <p class="event__duration">${travelTime}М</p>
                 </div>
                 <p class="event__price">
                   &euro;&nbsp;<span class="event__price-value">${basePrice}</span>
@@ -67,27 +68,28 @@ function createPointViewTemplate(point, offers, destinations) {
             </li>`;
 }
 
-export default class PointView {
+export default class PointView extends AbstractView {
+  #point = null;
+  #offers = null;
+  #destinations = null;
+  #handleClick = null;
   //Опишем конструктор с помощью деструктуризации извлекаем ключ point c описанием точки
-  constructor({ point, offers, destinations }) {
-    this.point = point;
-    this.offers = offers;
-    this.destinations = destinations;
+  constructor({ point, offers, destinations, onClick }) {
+    super();//вызываем конструктор родительского класса AbstractView
+    this.#point = point;
+    this.#offers = offers;
+    this.#destinations = destinations;
+    this.#handleClick = onClick;
+    this.element.querySelector('.event__rollup-btn').addEventListener('click', this.#clickHandler);
   }
 
-  getTemplate() {
+  #clickHandler = (evt) => {
+    evt.preventDefault();
+    this.#handleClick();
+  };
+
+  get template() {
     //Передаем аргументом объект с описанием точки
-    return createPointViewTemplate(this.point, this.offers, this.destinations);
-  }
-
-  getElement() {
-    if (!this.element) {
-      this.element = createElement(this.getTemplate());
-    }
-    return this.element;
-  }
-
-  removeElement() {
-    this.element = null;
+    return createPointViewTemplate(this.#point, this.#offers, this.#destinations);
   }
 }
