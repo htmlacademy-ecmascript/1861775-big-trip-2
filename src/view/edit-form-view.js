@@ -103,7 +103,7 @@ export default class EditFormView extends AbstractView {
 
   #submitHandler = (evt) => {
     evt.preventDefault();
-    this.#handleSubmit();
+    this.#handleSubmit(this.#point);
   };
 
   get template() {
