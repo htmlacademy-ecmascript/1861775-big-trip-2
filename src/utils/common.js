@@ -5,7 +5,10 @@ function getRandomArrayElement(items) {
 function getRandomInteger(integer) {
   return Math.floor(Math.random() * integer);
 }
+const isEscapeKey = (evt) => evt.key === 'Escape';
 
-const isEscapeKey = (evt) => evt.keyCode === 27;
+function updateItem(items, update) {
+  return items.map((item) => item.id === update.id ? update : item);
+}
 
-export { getRandomArrayElement, getRandomInteger, isEscapeKey };
+export { getRandomArrayElement, getRandomInteger, isEscapeKey, updateItem };
