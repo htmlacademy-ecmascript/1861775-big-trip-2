@@ -35,5 +35,38 @@ const FilterMessage = {
   FUTURE: 'There are no future events now',
 };
 
+const SortType = {
+  DAY:
+  {
+    text: 'day',
+    isDisabled: false,
+    isChecked: true
+  },
+  EVENT:
+  {
+    text: 'event',
+    isDisabled: true,
+    isChecked: false
+  },
+  TIME:
+  {
+    text: 'time',
+    isDisabled: false,
+    isChecked: false
+  },
+  PRICE:
+  {
+    text: 'price',
+    isDisabled: false,
+    isChecked: false
+  },
+  OFFER:
+  {
+    text: 'offer',
+    isDisabled: true,
+    isChecked: false
+  }
+};
 
-export { TIME_FORMAT, DATE_FORMAT, DATE_TIME_FORMAT, POINT_TYPES, DESTINATIONS, FilterType, FilterMessage };
+
+export { TIME_FORMAT, DATE_FORMAT, DATE_TIME_FORMAT, POINT_TYPES, DESTINATIONS, FilterType, FilterMessage, SortType };
