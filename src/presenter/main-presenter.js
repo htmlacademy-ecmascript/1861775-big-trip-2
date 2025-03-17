@@ -10,7 +10,7 @@ import { SortType } from '../const.js';
 import { sortPointByDate, sortPointByPrice, sortPointByTime } from '../utils/point.js';
 
 //Создадим класс, включающий в себя отрисовку остальных связанных компонентов
-export default class PointsListPresenter {
+export default class MainPresenter {
   #container = null;
   #filtersContainer = null;
   #pointsModel = null;
