@@ -1,6 +1,7 @@
 import AbstractView from '../framework/view/abstract-view.js';
 import { humanizeTaskDueDate, calculatesTravelTime } from '../utils/point.js';
 import { TIME_FORMAT, DATE_FORMAT } from '../const.js';
+import he from 'he';
 
 function createPointOffersTemplate(pointOffers, point) {
   return pointOffers
@@ -35,7 +36,7 @@ function createPointViewTemplate(point, offers, destinations) {
 
   return `<li class="trip-events__item">
               <div class="event">
-                <time class="event__date" datetime="2019-03-18">${date}</time>
+                <time class="event__date" datetime="${dateTo}">${date}</time>
                 <div class="event__type">
                   <img class="event__type-icon" width="42" height="42" src="img/icons/${type}.png" alt="Event type icon">
                 </div>
@@ -49,7 +50,7 @@ function createPointViewTemplate(point, offers, destinations) {
                   <p class="event__duration">${travelTime}М</p>
                 </div>
                 <p class="event__price">
-                  &euro;&nbsp;<span class="event__price-value">${basePrice}</span>
+                  &euro;&nbsp;<span class="event__price-value">${he.encode(String(basePrice))}</span>
                 </p>
                 <h4 class="visually-hidden">Offers:</h4>
                 <ul class="event__selected-offers">
