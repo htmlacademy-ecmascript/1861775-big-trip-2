@@ -77,7 +77,7 @@ export default class PointView extends AbstractView {
   #handleFavoriteClick = null;
   //Опишем конструктор с помощью деструктуризации извлекаем ключ point c описанием точки
   constructor({ point, offers, destinations, onClick, onFavoriteClick }) {
-    super();//вызываем конструктор родительского класса AbstractView
+    super();//вызываем конструктор родительского класса AbstractView.
     this.#point = point;
     this.#offers = offers;
     this.#destinations = destinations;
