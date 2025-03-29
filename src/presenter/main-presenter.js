@@ -1,7 +1,8 @@
-import { render, remove } from '../framework/render.js';
+import { render, remove, RenderPosition } from '../framework/render.js';
 import SortingView from '../view/sorting-view.js';
 import PointsListView from '../view/points-list-view.js';
 import NoPointView from '../view/no-point-view.js';
+import LoadingView from '../view/loading-view.js';
 import PointPresenter from './point-presenter.js';
 import { SortType, UpdateType, UserAction, FilterType } from '../const.js';
 import { sortPointByDate, sortPointByPrice, sortPointByTime } from '../utils/point.js';
@@ -24,12 +25,14 @@ export default class MainPresenter {
   #filtersComponent = null;
   #sortingComponent = null;
   #pointsListComponent = new PointsListView();
+  #loadingComponent = new LoadingView();
   #noPointComponent = null;
 
   #pointPresenters = new Map();
   #newPointPresenter = null;
   #currentSortType = SortType.DAY;
   #filterType = FilterType.EVERYTHING;
+  #isLoading = true;
 
 
   constructor({ container, filtersContainer, pointsModel, offersModel, destinationsModel, filterModel, onNewPointDestroy }) {
@@ -50,12 +53,11 @@ export default class MainPresenter {
       onDestroy: onNewPointDestroy
     });
 
-    this.#pointsModel.addObserver(this.#handleModelEvent);
     this.#filterModel.addObserver(this.#handleModelEvent);
+
   }
 
   get points() {
-
     this.#filterType = this.#filterModel.filter;
     const points = this.#pointsModel.points;
     const filteredPoints = filter[this.#filterType](points);
@@ -73,15 +75,19 @@ export default class MainPresenter {
   }
 
   init() {
+
     this.#offers = [...this.#offersModel.offers];
     this.#destinations = [...this.#destinationsModel.destinations];
 
+    this.#pointsModel.addObserver(this.#handleModelEvent);
+    this.#offersModel.addObserver(this.#handleModelEvent);
+    this.#destinationsModel.addObserver(this.#handleModelEvent);
 
     this.#renderComponents();
+    this.#handleModelEvent(UpdateType.INIT);
   }
 
   #renderComponents() {
-    // this.#renderFilter();
     this.#renderSort();
     this.#renderPointsList();
   }
@@ -103,16 +109,31 @@ export default class MainPresenter {
     this.#pointPresenters.forEach((presenter) => presenter.resetView());
   };
 
-  #handleViewAction = (actionType, updateType, update) => {
+  #handleViewAction = async (actionType, updateType, update) => {
     switch (actionType) {
       case UserAction.UPDATE_POINT:
-        this.#pointsModel.updatePoint(updateType, update);
+        this.#pointPresenters.get(update.id).setSaving();
+        try {
+          await this.#pointsModel.updatePoint(updateType, update);
+        } catch (err) {
+          this.#pointPresenters.get(update.id).setAborting();
+        }
         break;
       case UserAction.ADD_POINT:
-        this.#pointsModel.addPoint(updateType, update);
+        this.#newPointPresenter.setSaving();
+        try {
+          await this.#pointsModel.addPoint(updateType, update);
+        } catch (err) {
+          this.#newPointPresenter.setAborting();
+        }
         break;
       case UserAction.DELETE_POINT:
-        this.#pointsModel.deletePoint(updateType, update);
+        this.#pointPresenters.get(update.id).setDeleting();
+        try {
+          await this.#pointsModel.deletePoint(updateType, update);
+        } catch (err) {
+          this.#pointPresenters.get(update.id).setAborting();
+        }
         break;
     }
   };
@@ -135,12 +156,16 @@ export default class MainPresenter {
         this.#clearBoard({ resetSortType: true });
         this.#renderPointsList();
         break;
+      case UpdateType.INIT:
+        this.#isLoading = false;
+        remove(this.#loadingComponent);
+        this.#renderPointsList();
+        break;
     }
   };
 
 
   #handleSortTypeChange = (sortType) => {
-    //Сортируем задачи
     if (this.#currentSortType === sortType) {
       return;
     }
@@ -148,33 +173,48 @@ export default class MainPresenter {
     this.#currentSortType = sortType;
 
     this.#clearBoard();
-    this.#renderSort(); // Рендерим сортировку, если она не была отрисована
+    this.#renderSort(); // Добавляем пересоздание сортировки
     this.#renderPointsList();
   };
 
   #renderSort() {
-    if (!this.#sortingComponent) { // Проверяем, если сортировка уже отрисована
-      this.#sortingComponent = new SortingView({
-        currentSortType: this.#currentSortType,
-        onSortTypeChange: this.#handleSortTypeChange
-      });
-      render(this.#sortingComponent, this.#container);
+    if (this.#sortingComponent) {
+      remove(this.#sortingComponent);
     }
-  }
 
+    this.#sortingComponent = new SortingView({
+      currentSortType: this.#currentSortType,
+      onSortTypeChange: this.#handleSortTypeChange
+    });
+
+    render(this.#sortingComponent, this.#container);
+  }
 
   #renderPointsList() {
     render(this.#pointsListComponent, this.#container);
+    if (this.#isLoading) {
+      this.#renderLoading();
+      return;
+    }
+
+    if (!this.#destinationsModel.destinations || !this.#offersModel.offers) {
+      return;
+    }
 
     const points = this.points; // Берем уже отсортированные точки
 
     if (points.length === 0) {
       this.#renderEmptyPointsList();
+      return;
     }
 
-    for (let i = 0; i < this.points.length; i++) {
-      this.#renderPoint(this.points[i]);
+    for (let i = 0; i < points.length; i++) {
+      this.#renderPoint(points[i]);
     }
+  }
+
+  #renderLoading() {
+    render(this.#loadingComponent, this.#pointsListComponent.element, RenderPosition.AFTERBEGIN);
   }
 
   #clearBoard({ resetSortType = false } = {}) {
@@ -182,6 +222,8 @@ export default class MainPresenter {
     this.#newPointPresenter.destroy();
     this.#pointPresenters.forEach((presenter) => presenter.destroy());
     this.#pointPresenters.clear();
+
+    remove(this.#loadingComponent);
 
     if (this.#noPointComponent) {
       remove(this.#noPointComponent);
@@ -195,8 +237,8 @@ export default class MainPresenter {
   #renderPoint(point) {
     const pointPresenter = new PointPresenter({
       pointListContainer: this.#pointsListComponent.element,
-      offers: this.#offers,
-      destinations: this.#destinations,
+      offers: this.#offersModel.offers,
+      destinations: this.#destinationsModel.destinations,
       onDataChange: this.#handleViewAction,
       onModeChange: this.#handleModeChange,
     });
@@ -208,6 +250,9 @@ export default class MainPresenter {
   }
 
   #renderEmptyPointsList() {
+    if (this.#noPointComponent) {
+      return;
+    }
     this.#noPointComponent = new NoPointView({
       filterType: this.#filterType
     });
