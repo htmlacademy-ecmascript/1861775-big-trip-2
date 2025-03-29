@@ -64,6 +64,7 @@ Promise.all([
 ]).then(() => {
   mainPresenter.init(); // Теперь вызываем init() после загрузки данных
 }).catch((error) => {
+  error();
 }).finally(() => {
   render(newPointButtonComponent, siteHeaderElement);
 });
